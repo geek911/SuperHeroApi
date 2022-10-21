@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using SuperHeroApi.Data;
 using SuperHeroApi.Models;
 
 namespace SuperHeroApi.Controllers;
@@ -8,72 +9,78 @@ namespace SuperHeroApi.Controllers;
 [Route("api/[controller]")]
 public class SuperHeroController : ControllerBase
 {
-    
-    static List<SuperHero> heroes = new List<SuperHero>
+
+    readonly SuperHeroContext _context;
+    public SuperHeroController(SuperHeroContext context)
     {
-        new()
-        {
-            Id = 1,
-            Firstname = "Peter",
-            Lastname = "Parker",
-            Place = "New York City"
-        }
-    };
-    
+        _context = context;
+    }
     [HttpGet]
-    public IActionResult Get()
+    public async Task<IActionResult> Get()
     {
+        var heroes =  _context.SuperHeroes.AsAsyncEnumerable();
 
         return Ok(heroes);
     }
     
     [HttpGet("{id}")]
-    public IActionResult Get(int id)
+    public async Task<IActionResult> Get(int id)
     {
-        var hero = heroes.FirstOrDefault(hero => hero.Id == id);
+        var hero = await _context.SuperHeroes.FindAsync(id);
 
         if (hero is null)
         {
             return NotFound();
         }
         
-        return Ok(heroes);
+        return Ok(hero);
     }
 
 
 
     [HttpPost]
-    public IActionResult Post([FromBody] SuperHero hero)
+    public async Task<IActionResult> Post([FromBody] SuperHero hero)
     {
-        if (heroes.Count > 0)
-        {
-            int lastId = heroes[^1].Id;
+        var newHero = await _context.SuperHeroes.AddAsync(hero);
 
-            hero.Id = lastId + 1;
-            heroes.Add(hero);
-            return Ok(hero);
+        await _context.SaveChangesAsync();
+
+        return Ok(hero);
+    }
+    
+    [HttpPut]
+    public async Task<IActionResult> Put([FromBody] SuperHero hero)
+    {
+        var existingHero = await _context.SuperHeroes.FindAsync(hero.Id);
+
+        if (existingHero is null)
+        {
+            _context.Add(hero);
         }
         else
         {
-            return BadRequest("Was not able to save");
+            _context.Update(hero);
         }
 
+        await _context.SaveChangesAsync();
 
-
+        return Ok(hero);
     }
 
     [HttpDelete("{id}")]
-    public IActionResult Delete(int id)
-    {
-        var elementsRemoved = heroes.RemoveAll(h => h.Id == id);
+    public async Task<IActionResult> Delete(int id)
+    { 
+        var hero = await _context.SuperHeroes.FindAsync(id);
 
-        if (elementsRemoved > 0)
+        if (hero ==null)
         {
-            return Ok(elementsRemoved);
+            return NotFound();
         }
-        else
-        {
-            return BadRequest();
-        }
+
+        _context.SuperHeroes.Remove(hero);
+        await _context.SaveChangesAsync();
+
+        return Ok(hero);
+
     }
 }
