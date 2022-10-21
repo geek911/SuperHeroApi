@@ -1,5 +1,7 @@
-var builder = WebApplication.CreateBuilder(args);
+using SuperHeroApi.Data;
 
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddDbContext<SuperHeroContext>();
 // Add services to the container.
 
 builder.Services.AddControllers();

@@ -62,6 +62,7 @@ public class SuperHeroController : ControllerBase
 
     }
 
+    [HttpDelete("{id}")]
     public IActionResult Delete(int id)
     {
         var elementsRemoved = heroes.RemoveAll(h => h.Id == id);
